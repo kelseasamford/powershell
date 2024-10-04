@@ -1,0 +1,24 @@
+# Define paths
+$sourceFolder = "C:\Users\kizor\Downloads\marc-record-search-2024-10-03"
+$destinationFolder = "C:\Users\kizor\Downloads\marc-record-search-2024-10-03\destinationfolder"
+$fileList = "C:\Users\kizor\Downloads\marc-record-search-2024-10-03\To\marcuploads.txt"  # Path to the text file with file names
+
+# Create the destination folder if it doesn't exist
+If (!(Test-Path -Path $destinationFolder)) {
+    New-Item -ItemType Directory -Force -Path $destinationFolder
+}
+
+# Read file names from the list
+$fileNames = Get-Content -Path $fileList
+
+# Copy each file to the destination folder
+ForEach ($fileName in $fileNames) {
+    $sourceFilePath = Join-Path -Path $sourceFolder -ChildPath $fileName
+    If (Test-Path -Path $sourceFilePath) {
+        Copy-Item -Path $sourceFilePath -Destination $destinationFolder
+        Write-Output "Copied: $fileName"
+    }
+    Else {
+        Write-Output "File not found: $fileName"
+    }
+}
