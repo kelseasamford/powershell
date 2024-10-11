@@ -1,0 +1,33 @@
+# Define the path to the text file containing the list of URLs
+$urlsFile = "C:\Users\kizor\OneDrive - Samford University\E Coverage Checks\Access Checking\101124 OA Titles\urls.txt"
+
+# Define the path for the log file to store results
+$logFile = "C:\Users\kizor\OneDrive - Samford University\E Coverage Checks\Access Checking\101124 OA Titles\log.txt"
+
+# Read all URLs from the text file
+$urls = Get-Content $urlsFile
+
+# Open the log file for writing results
+Add-Content -Path $logFile -Value "URL Check Log - $(Get-Date)" -Force
+Add-Content -Path $logFile -Value "-----------------------------------"
+
+# Loop through each URL in the list
+foreach ($url in $urls) {
+    try {
+        # Send a request to the URL
+        $response = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 10
+
+        # Check the status code of the response
+        if ($response.StatusCode -eq 200) {
+            # Log success if the request was successful
+            Add-Content -Path $logFile -Value "$url : SUCCESS (Status Code: $($response.StatusCode))"
+        }
+    }
+    catch {
+        # Log the error message if the request failed
+        Add-Content -Path $logFile -Value "$url : ERROR - $($_.Exception.Message)"
+    }
+}
+
+# Final log entry
+Add-Content -Path $logFile -Value "URL Check Completed - $(Get-Date)"
