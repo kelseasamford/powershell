@@ -1,0 +1,55 @@
+# Import the required module for Excel (.xlsx) processing
+if (-not (Get-Module -ListAvailable -Name ImportExcel)) {
+    Install-Module -Name ImportExcel -Scope CurrentUser -Force
+}
+Import-Module ImportExcel
+
+# Specify the folder containing the files
+$sourceFolder = "C:\Users\kizor\Downloads\CounterReports"
+$outputFolder = "C:\Users\kizor\Downloads\outputfolder"
+
+# Ensure the output folder exists
+if (-not (Test-Path -Path $outputFolder)) {
+    New-Item -ItemType Directory -Path $outputFolder
+}
+
+# Get all files of specified types
+$fileTypes = "*.xlsx", "*.csv", "*.txt", "*.tsv"
+$files = Get-ChildItem -Path $sourceFolder -Include $fileTypes -File -Recurse
+
+foreach ($file in $files) {
+    $outputFile = Join-Path -Path $outputFolder -ChildPath ($file.BaseName + ".csv")
+    
+    try {
+        switch ($file.Extension.ToLower()) {
+            ".xlsx" {
+                # Read the Excel file and export it to CSV
+                $data = Import-Excel -Path $file.FullName
+                $data | Export-Csv -Path $outputFile -NoTypeInformation
+                Write-Host "Converted $($file.Name) to CSV."
+            }
+            ".csv" {
+                # Simply copy the CSV file to the output folder
+                Copy-Item -Path $file.FullName -Destination $outputFile
+                Write-Host "Copied $($file.Name) to output folder."
+            }
+            ".txt" {
+                # Convert tab-delimited text file to CSV
+                $data = Import-Csv -Path $file.FullName -Delimiter "`t"
+                $data | Export-Csv -Path $outputFile -NoTypeInformation
+                Write-Host "Converted $($file.Name) to CSV."
+            }
+            ".tsv" {
+                # Convert TSV file to CSV
+                $data = Import-Csv -Path $file.FullName -Delimiter "`t"
+                $data | Export-Csv -Path $outputFile -NoTypeInformation
+                Write-Host "Converted $($file.Name) to CSV."
+            }
+            default {
+                Write-Host "Unsupported file type: $($file.Extension)"
+            }
+        }
+    } catch {
+        Write-Host "Error processing $($file.Name): $_"
+    }
+}
