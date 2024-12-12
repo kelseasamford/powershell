@@ -1,0 +1,29 @@
+# Define the source and target directories
+$sourceFolder = "C:\outputfolder"
+$targetFolders = @{
+    'IR_M1' = "C:\IR_M1"
+    'TR_B1' = "C:\TR_B1"
+    'TR_J1' = "C:\TR_J1"
+}
+
+# Get all .csv files in the source folder
+$csvFiles = Get-ChildItem -Path $sourceFolder -Filter *.csv
+
+# Loop through each file
+foreach ($file in $csvFiles) {
+    # Determine the target folder based on the file name
+    $targetFolder = $null
+    foreach ($key in $targetFolders.Keys) {
+        if ($file.Name -match "$key") {
+            $targetFolder = $targetFolders[$key]
+            break
+        }
+    }
+
+    if ($targetFolder) {
+        Move-Item -Path $file.FullName -Destination $targetFolder
+        Write-Output "Moved `$file.Name to `$targetFolder"
+    } else {
+        Write-Output "No match found for `$file.Name"
+    }
+}
