@@ -1,9 +1,3 @@
-# Import the required module for Excel (.xlsx) processing
-if (-not (Get-Module -ListAvailable -Name ImportExcel)) {
-    Install-Module -Name ImportExcel -Scope CurrentUser -Force
-}
-Import-Module ImportExcel
-
 # Specify the folder containing the files
 $sourceFolder = "C:\Users\kizor\Downloads\CounterReports"
 $outputFolder = "C:\Users\kizor\Downloads\outputfolder"
