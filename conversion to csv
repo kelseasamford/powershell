@@ -1,49 +1,60 @@
-# Specify the folder containing the files
-$sourceFolder = "C:\Users\kizor\Downloads\CounterReports"
-$outputFolder = "C:\Users\kizor\Downloads\outputfolder"
+# Define input and output folders
+$inputFolder = "C:\Users\kizor\OneDrive - Samford University\CURRENTLY WORKING ON\ACRL\CounterReports"
+$outputFolder = "C:\Users\kizor\OneDrive - Samford University\CURRENTLY WORKING ON\ACRL\outputfolder"
 
-# Ensure the output folder exists
-if (-not (Test-Path -Path $outputFolder)) {
+# Create the output folder if it doesn't exist
+if (!(Test-Path -Path $outputFolder)) {
     New-Item -ItemType Directory -Path $outputFolder
 }
 
-# Get all files of specified types
-$fileTypes = "*.xlsx", "*.csv", "*.txt", "*.tsv"
-$files = Get-ChildItem -Path $sourceFolder -Include $fileTypes -File -Recurse
+# Import the ImportExcel module safely
+try {
+    if (-not (Get-Module -Name ImportExcel -ListAvailable)) {
+        Install-Module -Name ImportExcel -Force -Scope CurrentUser
+    }
+    Import-Module ImportExcel -ErrorAction Stop
+} catch {
+    Write-Host "Error loading ImportExcel module: $_" -ForegroundColor Red
+    Write-Host "Skipping files requiring ImportExcel processing." -ForegroundColor Yellow
+}
 
-foreach ($file in $files) {
-    $outputFile = Join-Path -Path $outputFolder -ChildPath ($file.BaseName + ".csv")
-    
-    try {
-        switch ($file.Extension.ToLower()) {
-            ".xlsx" {
-                # Read the Excel file and export it to CSV
-                $data = Import-Excel -Path $file.FullName
-                $data | Export-Csv -Path $outputFile -NoTypeInformation
-                Write-Host "Converted $($file.Name) to CSV."
-            }
-            ".csv" {
-                # Simply copy the CSV file to the output folder
-                Copy-Item -Path $file.FullName -Destination $outputFile
-                Write-Host "Copied $($file.Name) to output folder."
-            }
-            ".txt" {
-                # Convert tab-delimited text file to CSV
-                $data = Import-Csv -Path $file.FullName -Delimiter "`t"
-                $data | Export-Csv -Path $outputFile -NoTypeInformation
-                Write-Host "Converted $($file.Name) to CSV."
-            }
-            ".tsv" {
-                # Convert TSV file to CSV
-                $data = Import-Csv -Path $file.FullName -Delimiter "`t"
-                $data | Export-Csv -Path $outputFile -NoTypeInformation
-                Write-Host "Converted $($file.Name) to CSV."
-            }
-            default {
-                Write-Host "Unsupported file type: $($file.Extension)"
+# Process each file in the input folder
+Get-ChildItem -Path $inputFolder -File | ForEach-Object {
+    $filePath = $_.FullName
+    $fileNameWithoutExtension = $_.BaseName
+    $outputFile = Join-Path -Path $outputFolder -ChildPath "$fileNameWithoutExtension.csv"
+
+    switch ($_.Extension.ToLower()) {
+        ".csv" {
+            # If it's already a CSV, copy it to the output folder
+            Copy-Item -Path $filePath -Destination $outputFile
+        }
+        ".tsv" {
+            # Convert TSV to CSV
+            Import-Csv -Delimiter "`t" -Path $filePath | Export-Csv -NoTypeInformation -Path $outputFile
+        }
+        ".xls" {
+            # Convert XLS to CSV using ImportExcel if available
+            if (Get-Command -Name Import-Excel -ErrorAction SilentlyContinue) {
+                $data = Import-Excel -Path $filePath
+                $data | Export-Csv -NoTypeInformation -Path $outputFile
+            } else {
+                Write-Host "Skipping .xls file (requires ImportExcel): $filePath" -ForegroundColor Yellow
             }
         }
-    } catch {
-        Write-Host "Error processing $($file.Name): $_"
+        ".xlsx" {
+            # Convert XLSX to CSV using ImportExcel if available
+            if (Get-Command -Name Import-Excel -ErrorAction SilentlyContinue) {
+                $data = Import-Excel -Path $filePath
+                $data | Export-Csv -NoTypeInformation -Path $outputFile
+            } else {
+                Write-Host "Skipping .xlsx file (requires ImportExcel): $filePath" -ForegroundColor Yellow
+            }
+        }
+        default {
+            Write-Host "Skipping unsupported file: $filePath" -ForegroundColor Yellow
+        }
     }
 }
+
+Write-Host "Conversion complete! All files saved to $outputFolder" -ForegroundColor Green
