@@ -1,0 +1,11 @@
+# Define the path to the CSV file
+$csvPath = "C:\path\to\your\TR_B1 total.csv"
+
+# Import the CSV file
+$data = Import-Csv -Path $csvPath
+
+# Calculate the total sum of the "unique_title_requests" column
+$totalRequests = ($data | Measure-Object -Property unique_title_requests -Sum).Sum
+
+# Output the result
+Write-Output "The total of the 'unique_title_requests' column is: $totalRequests"
