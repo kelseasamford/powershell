@@ -1,0 +1,11 @@
+# Define the file path
+$filePath = "TR_J1 total.csv"  # Adjust the file extension if needed
+
+# Import the CSV file
+$data = Import-Csv -Path $filePath
+
+# Sum the "unique_item_requests" column
+$totalRequests = ($data | ForEach-Object { $_.unique_item_requests -as [int] }) -sum
+
+# Output the total
+Write-Output "Total Unique Item Requests: $totalRequests"
